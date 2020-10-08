@@ -1,0 +1,42 @@
+### MPLAB X ###
+
+#client secure directory
+secure
+
+#Build Directories
+[Dd]ebug/
+[Bb]uild/
+[Dd]ist/
+[Dd]isassembly/
+nbproject/private/
+
+#### potential net beans directories
+html/
+nbbuild/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+funclist
+nbproject/Package-*.bash
+nbproject/Makefile-*
+
+#Build Results
+*.d
+*.pre
+*.p1
+*.lst
+*.sym
+*.obj
+*.o
+*.sdb
+*.obj.dmp
+*.map
+
+#User Specific Files
+
+test/18444_Prox.X/nbproject/Makefile-*.mk
+test/18444_Prox.X/nbproject/Makefile-genesis.properties
+test/18444_Prox.X/nbproject/Package-default.bash
+test/18444_Prox.X/nbproject/private/configurations.xml
+test/18444_Prox.X/nbproject/private/private.xml
+test/18444_Prox.X/nbproject/private/SuppressibleMessageMemo.properties
