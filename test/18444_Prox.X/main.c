@@ -46,11 +46,35 @@
 /*
                          Main application
  */
+
+void processProximityActive(enum mtouch_proximity_names proximity){
+    switch(proximity){
+        case Proximity0:
+            LED_0_SetLow();
+//            LED_1_SetHigh();
+            break;
+        default: break;
+    }
+}
+
+void processProximityNotActive(enum mtouch_proximity_names proximity){
+    switch(proximity){
+        case Proximity0:
+            LED_0_SetHigh();
+//            LED_1_SetLow();
+            break;
+        default: break;
+    }
+}
+
 void main(void)
 {
     // initialize the device
     SYSTEM_Initialize();
-
+    LED_0_SetHigh();
+    LED_1_SetLow();
+    LED_2_SetLow();
+    LED_3_SetLow();
     // When using interrupts, you need to set the Global and Peripheral Interrupt Enable bits
     // Use the following macros to:
 
@@ -65,6 +89,9 @@ void main(void)
 
     // Disable the Peripheral Interrupts
     //INTERRUPT_PeripheralInterruptDisable();
+    
+    MTOUCH_Proximity_SetActivatedCallback(processProximityActive);
+    MTOUCH_Proximity_SetNotActivatedCallback(processProximityNotActive);
 
     while (1)
     {

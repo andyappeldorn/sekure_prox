@@ -60,9 +60,9 @@
     
     #define MTOUCH_SENSOR_ADPCH_Sensor_ANA4              0x4
     #define MTOUCH_SENSOR_PRECHARGE_Sensor_ANA4          48u
-    #define MTOUCH_SENSOR_ACQUISITION_Sensor_ANA4        16u
+    #define MTOUCH_SENSOR_ACQUISITION_Sensor_ANA4        32u
     #define MTOUCH_SENSOR_OVERSAMPLING_Sensor_ANA4       32u
-    #define MTOUCH_SENSOR_ADDITIONALCAP_Sensor_ANA4      0u
+    #define MTOUCH_SENSOR_ADDITIONALCAP_Sensor_ANA4      6u
     /*-----------------------------------------------------------------------------*/
     #define MTOUCH_SENSOR_ACTIVE_THRESHOLD               100u  
 
@@ -77,9 +77,9 @@
     #define MTOUCH_PROXIMITY_BASELINE_INIT          ((mtouch_prox_baselinecounter_t)16u)
     #define MTOUCH_PROXIMITY_BASELINE_RATE          ((mtouch_prox_baselinecounter_t)128u)
     #define MTOUCH_PROXIMITY_BASELINE_HOLD          ((mtouch_prox_baselinecounter_t)1024u)
-    #define MTOUCH_PROXIMITY_DEVIATION_GAIN         ((uint8_t)2u);
+    #define MTOUCH_PROXIMITY_DEVIATION_GAIN         ((uint8_t)1u);
     #define MTOUCH_PROXIMITY_NEGATIVEDEVIATION      ((mtouch_prox_statecounter_t)32u)
-    #define MTOUCH_PROXIMITY_ACTIVITYTIMEOUT        ((mtouch_prox_statecounter_t)1000u)
+    #define MTOUCH_PROXIMITY_ACTIVITYTIMEOUT        ((mtouch_prox_statecounter_t)2000u)
 
     #define MTOUCH_PROXIMITY_THRESHOLD_Proximity0   20u
     

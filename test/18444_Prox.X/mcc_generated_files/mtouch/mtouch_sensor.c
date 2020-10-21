@@ -342,6 +342,7 @@ void MTOUCH_Sensor_Scan_Initialize(void)
     PPSLOCKbits.PPSLOCKED = 0x00; // unlock PPS
 
     RA5PPS = 0x1F; /* ADCC:ADGRDA */
+    RA4PPS = 0x1F; /* ADCC:ADGRDA */
     
     PPSLOCK = 0x55;
     PPSLOCK = 0xAA;
@@ -362,9 +363,15 @@ static void Sensor_scheduleNextScan(void)
     bool skipScan = (bool)false;
     bool state = (bool)GIE;
     
+    GIE = 0;
+    PPSLOCK = 0x55;
+    PPSLOCK = 0xAA;
+    PPSLOCKbits.PPSLOCKED = 0x00; 
     
     while(MTOUCH_Sensor_wasSampled(currentScanSensor) || !MTOUCH_Sensor_isEnabled(currentScanSensor))
     {
+        /* re-enable the guard drive for the previous sensor pin*/
+        *(mtouch_sensor[currentScanSensor].adpch + &RA0PPS) = 0x1F;
         if(++currentScanSensor == MTOUCH_SENSORS)
         {
             currentScanSensor = 0;
@@ -374,6 +381,13 @@ static void Sensor_scheduleNextScan(void)
         }
     }
     
+    /* disable the guard drive for current sensor pin*/
+    *(mtouch_sensor[currentScanSensor].adpch + &RA0PPS) = 0;
+
+    PPSLOCK = 0x55;
+    PPSLOCK = 0xAA;
+    PPSLOCKbits.PPSLOCKED = 0x01; 
+    GIE = state;
     
     if(skipScan==false)
     {
@@ -518,7 +532,8 @@ static inline void MTOUCH_Sensor_Service(void)
         sensor = &mtouch_sensor[currentScanSensor];
         if(!Sensor_isCalibrated(sensor))
         {
-            Sensor_autoCalibration(sensor);
+            /* Skip sensor autocalibration based on MCC configuration */
+            Sensor_setCalibrated(sensor);                                                                      
         }
         else
         {
