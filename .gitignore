@@ -47,3 +47,10 @@ test/SeKure_Prox.X/nbproject/Package-default.bash
 test/SeKure_Prox.X/nbproject/private/configurations.xml
 test/SeKure_Prox.X/nbproject/private/private.xml
 test/SeKure_Prox.X/nbproject/private/SuppressibleMessageMemo.properties
+
+tft_project_01112101/nbproject/Makefile-*.mk
+tft_project_01112101/nbproject/Makefile-genesis.properties
+tft_project_01112101/nbproject/Package-default.bash
+tft_project_01112101/nbproject/private/configurations.xml
+tft_project_01112101/nbproject/private/private.xml
+tft_project_01112101/nbproject/private/SuppressibleMessageMemo.properties
