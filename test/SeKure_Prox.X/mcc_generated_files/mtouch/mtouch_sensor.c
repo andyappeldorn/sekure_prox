@@ -56,8 +56,6 @@
 #define Sensor_calculate_cal_thrs(oversampling)             ((mtouch_sensor_packetsample_t)(oversampling)<<1)
 #define Sensor_calculate_balance_point(oversampling)        ((mtouch_sensor_packetsample_t)(oversampling)<<9)
 
-#define FH_NOISE_THRS                                       (mtouch_sensor_packetsample_t)100
-#define FH_OVERLIMIT_THRS                                   (uint8_t)6
 #define MTOUCH_SENSOR_SAMPLEDELAY_MIN                       (uint8_t)DELAY_CYCLE(0)
 #define MTOUCH_SENSOR_SAMPLEDELAY_MAX                       (uint8_t)DELAY_CYCLE(15)
 #define FRQ_0                                               (uint8_t)MTOUCH_SENSOR_SAMPLEDELAY_MIN
@@ -217,7 +215,7 @@ void MTOUCH_Sensor_ADCC_Initialize(void)
 {
     
     // ADCCS  
-    ADCLK = 0x7;
+    ADCLK = 0x1;
     // ADNREF VSS; ADPREF VDD;
     ADREF = 0x00;
     // ADCAP 0; 
@@ -659,88 +657,10 @@ static mtouch_sensor_packetsample_t medianFilter(enum mtouch_sensor_names sensor
 static void Sensor_FrequencyHopping(void)
 {
  
-    Sensor_FrequencyHopping_Autotune_Process();
     
     Sensor_setSamplePeriod();
 }
 
-/*
- *=========================================================================
- * AFA for ADCC
- *
- *=========================================================================
- */
-static void Sensor_FrequencyHopping_Autotune_Process(void)
-{
-    enum mtouch_sensor_names sensor;
-    uint8_t frequencyIndex;
-    uint8_t newfrequencyFound,selectedFrequency;
-    uint16_t variance,maxVariance;
-    
-    
-    static uint8_t varianceOverLimitCounter[3] = {0,0,0};
-    
-    maxVariance = 0;
-    
-    for(sensor = 0; sensor < MTOUCH_SENSORS; sensor++)
-    {
-        variance = (mtouch_sensor_packetsample_t)abs(packet_sample[sensor] - sensor_medianBuffer[sensor][freq_index]);
-        if(variance > maxVariance)
-            maxVariance = variance;
-    }
-    
-    if(maxVariance > FH_NOISE_THRS)
-    {
-        if(++varianceOverLimitCounter[freq_index] >= FH_OVERLIMIT_THRS)
-        {
-            newfrequencyFound = 0;
-            selectedFrequency = freq_hop[freq_index];
-            do
-            {
-                if(selectedFrequency > (MTOUCH_SENSOR_SAMPLEDELAY_MIN + DELAY_CYCLE(1)))
-                    selectedFrequency = selectedFrequency - DELAY_CYCLE(1);
-                else
-                    selectedFrequency = MTOUCH_SENSOR_SAMPLEDELAY_MAX;
-                    
-                newfrequencyFound = 1;
-                
-                for(frequencyIndex = 0;frequencyIndex < sizeof(freq_hop);frequencyIndex++)
-                {
-                    if(frequencyIndex == freq_index)
-                    {
-                    
-                    }
-                    else if(selectedFrequency==freq_hop[frequencyIndex])
-                    {
-                        newfrequencyFound = 0;
-                    }
-                    else
-                    {
-                    
-                    }
-                }
-                
-            }while(!newfrequencyFound);
-            
-            freq_hop[freq_index] = selectedFrequency;
-            
-            for(frequencyIndex = 0;frequencyIndex < sizeof(freq_hop);frequencyIndex++)
-            {
-                varianceOverLimitCounter[frequencyIndex] = 0;
-            }
-        }
-    }
-    else if(maxVariance < (FH_NOISE_THRS >>1)) 
-    {
-        /* Max variance less than half limit - decrement auto-tune counter if non-zero */
-        if(varianceOverLimitCounter[freq_index] > 0)
-            varianceOverLimitCounter[freq_index]--;
-    }
-    else
-    {
-        /* Keep this frequency */
-    }
-}
 
 /*
  * =======================================================================

@@ -14,7 +14,7 @@
     This header file provides implementations for driver APIs for all modules selected in the GUI.
     Generation Information :
         Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.81.6
-        Device            :  PIC16LF18444
+        Device            :  PIC16LF18446
         Driver Version    :  2.00
     The generated drivers are tested against the following:
         Compiler          :  XC8 2.30 and above or later
@@ -53,26 +53,23 @@ void SYSTEM_Initialize(void)
     PIN_MANAGER_Initialize();
     OSCILLATOR_Initialize();
     ADCC_Initialize();
+    TMR0_Initialize();
     EUSART1_Initialize();
     MTOUCH_Initialize();
 }
 
 void OSCILLATOR_Initialize(void)
 {
-    // NOSC HFINTOSC with 2x PLL; NDIV 1; 
-    OSCCON1 = 0x10;
+    // NOSC HFINTOSC; NDIV 4; 
+    OSCCON1 = 0x62;
     // CSWHOLD may proceed; SOSCPWR Low power; 
     OSCCON3 = 0x00;
     // MFOEN disabled; LFOEN disabled; ADOEN disabled; SOSCEN disabled; EXTOEN disabled; HFOEN disabled; 
     OSCEN = 0x00;
-    // HFFRQ 16_MHz; 
-    OSCFRQ = 0x05;
+    // HFFRQ 32_MHz; 
+    OSCFRQ = 0x06;
     // HFTUN 0; 
     OSCTUNE = 0x00;
-    // Wait for PLL to stabilize
-    while(PLLR == 0)
-    {
-    }
 }
 
 void PMD_Initialize(void)
@@ -89,7 +86,7 @@ void PMD_Initialize(void)
     PMD4 = 0x00;
     // CWG2MD CWG2 enabled; CWG1MD CWG1 enabled; 
     PMD5 = 0x00;
-    // U1MD EUSART1 enabled; MSSP1MD MSSP1 enabled; 
+    // U1MD EUSART1 enabled; MSSP1MD MSSP1 enabled; MSSP2MD MSSP2 enabled; 
     PMD6 = 0x00;
     // CLC3MD CLC3 enabled; CLC4MD CLC4 enabled; DSM1MD DSM enabled; SMT1MD SMT1 enabled; CLC1MD CLC1 enabled; CLC2MD CLC2 enabled; 
     PMD7 = 0x00;

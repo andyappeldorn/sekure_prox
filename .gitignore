@@ -40,3 +40,10 @@ test/18444_Prox.X/nbproject/Package-default.bash
 test/18444_Prox.X/nbproject/private/configurations.xml
 test/18444_Prox.X/nbproject/private/private.xml
 test/18444_Prox.X/nbproject/private/SuppressibleMessageMemo.properties
+
+test/SeKure_Prox.X/nbproject/Makefile-*.mk
+test/SeKure_Prox.X/nbproject/Makefile-genesis.properties
+test/SeKure_Prox.X/nbproject/Package-default.bash
+test/SeKure_Prox.X/nbproject/private/configurations.xml
+test/SeKure_Prox.X/nbproject/private/private.xml
+test/SeKure_Prox.X/nbproject/private/SuppressibleMessageMemo.properties
