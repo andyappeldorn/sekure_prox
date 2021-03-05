@@ -153,8 +153,10 @@ void main(void) {
 
             case BAT_CHECK_STATE:
                 if (MTOUCH_Sensor_isSampling() == false) {
+                    MTOUCH_Sensor_Disable(Sensor_ANA4);
                     battery_service();
-                    MTOUCH_Sensor_Scan_Initialize();
+                    MTOUCH_Sensor_Enable(Sensor_ANA4);
+                    MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
                 }
                 break;
 
