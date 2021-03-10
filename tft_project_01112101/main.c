@@ -44,6 +44,7 @@
 #include "mcc_generated_files/mcc.h"
 #include "main.h"
 
+#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
 #define ALL_FLASH_SECONDS   102   // 10 s
 
 uint8_t current_show = TEST_SHOW;
@@ -55,7 +56,7 @@ bool proximity_detect_status = true;
 bool one_minute_flag = false;
 
 typedef enum {
-    SENSING, LED_KNIGHT, LED_ALL_FLASH, RE_ARM, BAT_CHECK_STATE,
+    SENSING, LED_KNIGHT, LED_ALL_FLASH, BAT_CHECK_STATE, RE_ARM
 } e_controlState; // control states
 
 e_controlState controlState = RE_ARM;
@@ -68,6 +69,7 @@ void main(void) {
     
     MTOUCH_Proximity_SetActivatedCallback(processProximityActive);
     MTOUCH_Proximity_SetNotActivatedCallback(processProximityNotActive);
+    MTOUCH_Service_disableLowpower();
 
     // Turn off FVR
     FVRCONbits.FVREN = 0;
@@ -137,7 +139,9 @@ void main(void) {
                 MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
                 disable_switches();
                 controlState = SENSING; // skip through
+#ifdef ENABLE_LOWPOWER
                 MTOUCH_Service_enableLowpower();
+#endif
                 break;
         }
     }

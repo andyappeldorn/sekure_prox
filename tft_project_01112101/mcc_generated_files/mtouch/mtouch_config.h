@@ -40,7 +40,7 @@
 #include <stdbool.h>
 #include "mtouch_sensor.h"
 #include "mtouch_proximity.h"
-//#include "mtouch_datastreamer.h"
+#include "mtouch_datastreamer.h"
 
 /*
  * =======================================================================
@@ -49,7 +49,7 @@
  */
     #define MTOUCH_SENSORS          1u
     #define MTOUCH_PROXIMITY        1u
-    #define MTOUCH_DEBUG_COMM_ENABLE      0u
+    #define MTOUCH_DEBUG_COMM_ENABLE      1u
 
     /* 
      * =======================================================================
@@ -106,6 +106,7 @@
      #define MTOUCH_LOWPOWER_SCAN_INTERVAL          20u   //unit ms
      #define MTOUCH_LOWPOWER_INACTIVE_TIMEOUT       2000   //unit ms   
      #define MTOUCH_LOWPOWER_BASELINEUPDATE_TIME    64   //unit ms  
+
 
 #endif // MTOUCH_CONFIG_H
 /**
