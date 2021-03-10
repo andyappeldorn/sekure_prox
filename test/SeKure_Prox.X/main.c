@@ -48,7 +48,31 @@
 uint32_t timerLedDisplay;
 uint32_t timerLedWalking;
 uint32_t timerLedFlashing;
-uint32_t timerBatteryCheck;
+
+/* TMR0 callback function, tick incrementer called every ~100ms*/
+void LedTimerISR(void) {
+    timerLedDisplay++;
+    timerLedWalking++;
+    timerLedFlashing++;
+}
+
+/* LED Walking Display Process */
+void LedWalkingProcess(void) {
+    if (timerLedWalking > 1) {
+        LED_0_Toggle(); // toggle LED
+        timerLedWalking -= 1; // decrement tick counter
+    }
+}
+
+/* LED Flashing Display Process */
+void LedFlashingProcess(void) {
+#if 0
+    if (timerLedFlashing > 1) {
+        IO_LED_Toggle(); // toggle LED
+        timerLedFlashing -= 1; // decrement tick counter
+    }
+#endif
+}
 
 typedef enum {
     SENSING, LED_WALKING, LED_FLASH, RE_ARM,
@@ -56,12 +80,28 @@ typedef enum {
 e_controlState controlState = SENSING;
 #endif
 
-void LedTimerISR(void);
-void LedWalkingProcess(void);
-void LedFlashingProcess(void);
-void processProximityActive(enum mtouch_proximity_names proximity);
-void processProximityNotActive(enum mtouch_proximity_names proximity);
+#if 1
 
+void processProximityActive(enum mtouch_proximity_names proximity) {
+    switch (proximity) {
+        case Proximity0:
+            LED_0_SetLow();
+            //            LED_1_SetHigh();
+            break;
+        default: break;
+    }
+}
+
+void processProximityNotActive(enum mtouch_proximity_names proximity) {
+    switch (proximity) {
+        case Proximity0:
+            LED_0_SetHigh();
+            //            LED_1_SetLow();
+            break;
+        default: break;
+    }
+}
+#endif
 
 /*
                          Main application
@@ -135,54 +175,6 @@ void main(void) {
         }
     }
 }
-
-/* TMR0 callback function, tick incrementer called every ~100ms*/
-void LedTimerISR(void) {
-    timerLedDisplay++;
-    timerLedWalking++;
-    timerLedFlashing++;
-    timerBatteryCheck++;
-}
-
-/* LED Walking Display Process */
-void LedWalkingProcess(void) {
-    if (timerLedWalking > 1) {
-        LED_0_Toggle(); // toggle LED
-        timerLedWalking -= 1; // decrement tick counter
-    }
-}
-
-/* LED Flashing Display Process */
-void LedFlashingProcess(void) {
-#if 0
-    if (timerLedFlashing > 1) {
-        IO_LED_Toggle(); // toggle LED
-        timerLedFlashing -= 1; // decrement tick counter
-    }
-#endif
-}
-
-#if 1
-void processProximityActive(enum mtouch_proximity_names proximity) {
-    switch (proximity) {
-        case Proximity0:
-            LED_0_SetLow();
-            //            LED_1_SetHigh();
-            break;
-        default: break;
-    }
-}
-
-void processProximityNotActive(enum mtouch_proximity_names proximity) {
-    switch (proximity) {
-        case Proximity0:
-            LED_0_SetHigh();
-            //            LED_1_SetLow();
-            break;
-        default: break;
-    }
-}
-#endif
 /**
  End of File
  */

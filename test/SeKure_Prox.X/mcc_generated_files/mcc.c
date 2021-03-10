@@ -60,16 +60,20 @@ void SYSTEM_Initialize(void)
 
 void OSCILLATOR_Initialize(void)
 {
-    // NOSC HFINTOSC; NDIV 4; 
-    OSCCON1 = 0x62;
+    // NOSC HFINTOSC with 2x PLL; NDIV 1; 
+    OSCCON1 = 0x10;
     // CSWHOLD may proceed; SOSCPWR Low power; 
     OSCCON3 = 0x00;
     // MFOEN disabled; LFOEN disabled; ADOEN disabled; SOSCEN disabled; EXTOEN disabled; HFOEN disabled; 
     OSCEN = 0x00;
-    // HFFRQ 32_MHz; 
-    OSCFRQ = 0x06;
+    // HFFRQ 16_MHz; 
+    OSCFRQ = 0x05;
     // HFTUN 0; 
     OSCTUNE = 0x00;
+    // Wait for PLL to stabilize
+    while(PLLR == 0)
+    {
+    }
 }
 
 void PMD_Initialize(void)
