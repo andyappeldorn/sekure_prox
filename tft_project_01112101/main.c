@@ -51,26 +51,8 @@ uint32_t t0tick_seconds_countdown;
 uint32_t blocking_delay_timer = 0;
 uint32_t bs_timer = 0;
 bool bat_is_low = false;
-
-// TODO - this needs to be smaller rep rate so that we have
-//        more fine-grained control over delays.
-
-/* TMR0 callback function, tick incrementer called every ~100ms*/
-void LedTimerISR(void) {
-    light_handler();
-
-    if (blocking_delay_timer) {
-        blocking_delay_timer--;
-    }
-
-    if (t0tick_seconds_countdown) {
-        t0tick_seconds_countdown--;
-    }
-
-    if (bs_timer) {
-        bs_timer--;
-    }
-}
+bool proximity_detect_status = true;
+bool one_minute_flag = false;
 
 typedef enum {
     SENSING, LED_KNIGHT, LED_ALL_FLASH, RE_ARM, BAT_CHECK_STATE,
@@ -78,33 +60,22 @@ typedef enum {
 
 e_controlState controlState = RE_ARM;
 
-bool one_minute_flag = false;
-
 void main(void) {
     // initialize the device
     SYSTEM_Initialize();
     TMR0_StopTimer(); // stop timer that is started in sys initialize process
     TMR0_SetInterruptHandler(LedTimerISR);
+    
+    MTOUCH_Proximity_SetActivatedCallback(processProximityActive);
+    MTOUCH_Proximity_SetNotActivatedCallback(processProximityNotActive);
 
     // Turn off FVR
     FVRCONbits.FVREN = 0;
 
     all_leds_off();
 
-    // When using interrupts, you need to set the Global and Peripheral Interrupt Enable bits
-    // Use the following macros to:
-
-    // Enable the Global Interrupts
-    INTERRUPT_GlobalInterruptEnable();
-
-    // Enable the Peripheral Interrupts
-    INTERRUPT_PeripheralInterruptEnable();
-
-    // Disable the Global Interrupts
-    //INTERRUPT_GlobalInterruptDisable();
-
-    // Disable the Peripheral Interrupts
-    //INTERRUPT_PeripheralInterruptDisable();
+    INTERRUPT_GlobalInterruptEnable();  // Enable the Global Interrupts
+    INTERRUPT_PeripheralInterruptEnable();  // Enable the Peripheral Interrupts
 
     while (1) {
 
@@ -169,6 +140,48 @@ void main(void) {
                 MTOUCH_Service_enableLowpower();
                 break;
         }
+    }
+}
+
+/* proximity detection active callback
+ */
+void processProximityActive(enum mtouch_proximity_names proximity) {
+    switch (proximity) {
+        case Proximity0:
+            proximity_detect_status = true;
+            break;
+        default: break;
+    }
+}
+
+/* proximity detection not active callback
+ */
+void processProximityNotActive(enum mtouch_proximity_names proximity) {
+    switch (proximity) {
+        case Proximity0:
+            proximity_detect_status = false;
+            break;
+        default: break;
+    }
+}
+
+// TODO - this needs to be smaller rep rate so that we have
+//        more fine-grained control over delays.
+
+/* TMR0 callback function, tick incrementer called every ~100ms*/
+void LedTimerISR(void) {
+    light_handler();
+
+    if (blocking_delay_timer) {
+        blocking_delay_timer--;
+    }
+
+    if (t0tick_seconds_countdown) {
+        t0tick_seconds_countdown--;
+    }
+
+    if (bs_timer) {
+        bs_timer--;
     }
 }
 

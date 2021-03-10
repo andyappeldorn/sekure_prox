@@ -21,6 +21,9 @@
 #define TEST_SHOW       3
 #define HANDS_OFF_SHOW  4
 
+void processProximityActive(enum mtouch_proximity_names proximity);
+void processProximityNotActive(enum mtouch_proximity_names proximity);
+void LedTimerISR(void);
 void light_handler(void);
 void knight_rider(void);
 void all_at_50(void);
