@@ -47,7 +47,20 @@
 //#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
 #define ALL_FLASH_SECONDS   102   // 10 s
 
-uint8_t current_show = TEST_SHOW;   // led display state machine variable
+
+typedef enum {
+    SENSING, LED_KNIGHT, LED_ALL_FLASH, BAT_CHECK_STATE, RE_ARM
+} e_controlState; // main loop control states
+
+e_controlState controlState = RE_ARM;
+
+typedef enum {
+    NOTHING_SHOW, KNIGHT_SHOW, ALL_SHOW, TEST_SHOW, HANDS_OFF_SHOW
+} e_lightShowState;
+
+e_lightShowState lightShowState = NOTHING_SHOW;
+
+
 uint32_t t0tick_seconds_countdown;  // tick counter for seconds elapsed
 uint32_t blocking_delay_timer = 0;  // blocking delay timer????
 uint32_t bs_timer = 0;  // battery status timer
@@ -55,11 +68,7 @@ bool bat_is_low = false;    // low battery flag
 bool proximity_detect_status = true;    // proximity detect status flag
 bool one_minute_flag = false;   // one minute elapsed flag
 
-typedef enum {
-    SENSING, LED_KNIGHT, LED_ALL_FLASH, BAT_CHECK_STATE, RE_ARM
-} e_controlState; // main loop control states
 
-e_controlState controlState = RE_ARM;
 
 void main(void) {
     // initialize the device
@@ -84,7 +93,7 @@ void main(void) {
         if (one_minute_flag) {
             one_minute_flag = false;
             controlState = BAT_CHECK_STATE;
-            current_show = NOTHING_SHOW;
+            lightShowState = NOTHING_SHOW;
             all_leds_off();
             MTOUCH_Service_disableLowpower();
             TMR0_StartTimer();
@@ -97,7 +106,7 @@ void main(void) {
                         MTOUCH_Service_disableLowpower();   // turn off low power
                         TMR0_StartTimer(); // start timer
                         enable_switches();  
-                        current_show = KNIGHT_SHOW;
+                        lightShowState = KNIGHT_SHOW;
                         controlState = LED_KNIGHT; // change state to LED walking display
                         t0tick_seconds_countdown = get_switch_dwell_time_setting();
                     } else {
@@ -112,14 +121,14 @@ void main(void) {
                 if (!t0tick_seconds_countdown) {
                     controlState = LED_ALL_FLASH;
                     t0tick_seconds_countdown = ALL_FLASH_SECONDS;
-                    current_show = ALL_SHOW;
+                    lightShowState = ALL_SHOW;
                 }
                 break;
 
             case LED_ALL_FLASH:
                 if (!t0tick_seconds_countdown) {
                     controlState = RE_ARM;
-                    current_show = NOTHING_SHOW;
+                    lightShowState = NOTHING_SHOW;
                     all_leds_off();
                 }
                 break;
@@ -197,11 +206,11 @@ void LedTimerISR(void) {
  *   Return Value:   none
  *
  *   Description:    Sequences LEDs from timer isr. Canned show selected
- *                   by global variable current_show.
+ *                   by global variable lightShowState.
  *
  ********************************************************************/
 void light_handler(void) {
-    switch (current_show) {
+    switch (lightShowState) {
             // Knight rider
         case KNIGHT_SHOW:
             knight_rider();
@@ -237,7 +246,7 @@ void battery_service(void) {
             // Turn on FVR, turn on indicator led if necessary
             // Don't measure until state - this gives 100 ms for FVR to stabilize.
         case 0:
-            current_show = HANDS_OFF_SHOW;
+            lightShowState = HANDS_OFF_SHOW;
 
             // This is a heartbeat led, independent of bat voltage, per Dave A.
             LED_1_SetHigh();
@@ -289,7 +298,7 @@ void battery_service(void) {
             if (!bs_timer) {
                 bs_state = 0;
                 controlState = RE_ARM;
-                current_show = NOTHING_SHOW;
+                lightShowState = NOTHING_SHOW;
                 all_leds_off();
             }
             break;
