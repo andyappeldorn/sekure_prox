@@ -44,20 +44,20 @@
 #include "mcc_generated_files/mcc.h"
 #include "main.h"
 
-#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
+//#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
 #define ALL_FLASH_SECONDS   102   // 10 s
 
-uint8_t current_show = TEST_SHOW;
-uint32_t t0tick_seconds_countdown;
-uint32_t blocking_delay_timer = 0;
-uint32_t bs_timer = 0;
-bool bat_is_low = false;
-bool proximity_detect_status = true;
-bool one_minute_flag = false;
+uint8_t current_show = TEST_SHOW;   // led display state machine variable
+uint32_t t0tick_seconds_countdown;  // tick counter for seconds elapsed
+uint32_t blocking_delay_timer = 0;  // blocking delay timer????
+uint32_t bs_timer = 0;  // battery status timer
+bool bat_is_low = false;    // low battery flag
+bool proximity_detect_status = true;    // proximity detect status flag
+bool one_minute_flag = false;   // one minute elapsed flag
 
 typedef enum {
     SENSING, LED_KNIGHT, LED_ALL_FLASH, BAT_CHECK_STATE, RE_ARM
-} e_controlState; // control states
+} e_controlState; // main loop control states
 
 e_controlState controlState = RE_ARM;
 
