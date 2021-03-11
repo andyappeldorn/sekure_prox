@@ -139,11 +139,11 @@ void main(void) {
             case SENSING:
                 if (MTOUCH_Service_Mainloop()) { // service mtouch library, acquire sensor data and test
                     if (MTOUCH_Proximity_isActivated(0)) {
-                        controlState = LED_WALKING; // change state to LED walking display
+//                        controlState = LED_WALKING; // change state to LED walking display
                         timerLedDisplay = 0; // reset display mode timer counter
                         timerLedWalking = 1; // preload walking timer counter, so LED turns on immediately
                         timerLedFlashing = 2; // preload flashing timer counter
-                        TMR0_StartTimer(); // start timer
+//                        TMR0_StartTimer(); // start timer
                     } else {
                         controlState = SENSING; // stay in sensing state
                         LED_0_SetLow(); // turn off LEDs
