@@ -53,12 +53,11 @@
 #include <stdbool.h>
 #include <conio.h>
 #include "interrupt_manager.h"
-#include "fvr.h"
 #include "adcc.h"
+#include "fvr.h"
 #include "tmr2.h"
 #include "tmr0.h"
 #include "mtouch/mtouch.h"
-#include "eusart1.h"
 
 
 

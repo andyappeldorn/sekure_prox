@@ -12,7 +12,6 @@
           <itemPath>mcc_generated_files/mtouch/mtouch_config.h</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch_proximity.h</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch.h</itemPath>
-          <itemPath>mcc_generated_files/mtouch/mtouch_datastreamer.h</itemPath>
         </logicalFolder>
         <itemPath>mcc_generated_files/adcc.h</itemPath>
         <itemPath>mcc_generated_files/mcc.h</itemPath>
@@ -22,10 +21,7 @@
         <itemPath>mcc_generated_files/tmr0.h</itemPath>
         <itemPath>mcc_generated_files/tmr2.h</itemPath>
         <itemPath>mcc_generated_files/fvr.h</itemPath>
-        <itemPath>mcc_generated_files/eusart1.h</itemPath>
       </logicalFolder>
-      <itemPath>main.h</itemPath>
-      <itemPath>battery.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -42,10 +38,6 @@
           <itemPath>mcc_generated_files/mtouch/mtouch_sensor.c</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch_proximity.c</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch_api_example.c</itemPath>
-          <itemPath>mcc_generated_files/mtouch/mtouch_datastreamer.c</itemPath>
-          <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.db</itemPath>
-          <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.sc</itemPath>
-          <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.ds</itemPath>
         </logicalFolder>
         <itemPath>mcc_generated_files/interrupt_manager.c</itemPath>
         <itemPath>mcc_generated_files/pin_manager.c</itemPath>
@@ -55,10 +47,8 @@
         <itemPath>mcc_generated_files/tmr0.c</itemPath>
         <itemPath>mcc_generated_files/tmr2.c</itemPath>
         <itemPath>mcc_generated_files/fvr.c</itemPath>
-        <itemPath>mcc_generated_files/eusart1.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
-      <itemPath>battery.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -67,9 +57,6 @@
       <itemPath>MyConfig.mc3</itemPath>
     </logicalFolder>
   </logicalFolder>
-  <sourceRootList>
-    <Elem>.</Elem>
-  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="default" type="2">
@@ -78,9 +65,9 @@
         <targetDevice>PIC16LF18446</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>ICD4Tool</platformTool>
+        <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC8</languageToolchain>
-        <languageToolchainVersion>2.31</languageToolchainVersion>
+        <languageToolchainVersion>2.20</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
@@ -207,7 +194,7 @@
         <property key="ToolFirmwareToolPack"
                   value="Press to select which tool pack to use"/>
         <property key="communication.interface.jtag" value="2wire"/>
-        <property key="debugoptions.useswbreakpoints" value="true"/>
+        <property key="debugoptions.useswbreakpoints" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>

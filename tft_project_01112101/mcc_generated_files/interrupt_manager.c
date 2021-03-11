@@ -58,15 +58,7 @@ void __interrupt() INTERRUPT_InterruptManager (void)
     }
     else if(INTCONbits.PEIE == 1)
     {
-        if(PIE3bits.TX1IE == 1 && PIR3bits.TX1IF == 1)
-        {
-            EUSART1_TxDefaultInterruptHandler();
-        } 
-        else if(PIE3bits.RC1IE == 1 && PIR3bits.RC1IF == 1)
-        {
-            EUSART1_RxDefaultInterruptHandler();
-        } 
-        else if(PIE1bits.ADTIE == 1 && PIR1bits.ADTIF == 1)
+        if(PIE1bits.ADTIE == 1 && PIR1bits.ADTIF == 1)
         {
             ADCC_ThresholdISR();
         } 

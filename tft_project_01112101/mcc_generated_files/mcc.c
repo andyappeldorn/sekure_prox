@@ -56,22 +56,25 @@ void SYSTEM_Initialize(void)
     ADCC_Initialize();
     TMR2_Initialize();
     TMR0_Initialize();
-    EUSART1_Initialize();
     MTOUCH_Initialize();
 }
 
 void OSCILLATOR_Initialize(void)
 {
-    // NOSC HFINTOSC; NDIV 1; 
-    OSCCON1 = 0x60;
+    // NOSC HFINTOSC with 2x PLL; NDIV 1; 
+    OSCCON1 = 0x10;
     // CSWHOLD may proceed; SOSCPWR Low power; 
     OSCCON3 = 0x00;
     // MFOEN disabled; LFOEN disabled; ADOEN disabled; SOSCEN disabled; EXTOEN disabled; HFOEN disabled; 
     OSCEN = 0x00;
-    // HFFRQ 32_MHz; 
-    OSCFRQ = 0x06;
+    // HFFRQ 16_MHz; 
+    OSCFRQ = 0x05;
     // HFTUN 0; 
     OSCTUNE = 0x00;
+    // Wait for PLL to stabilize
+    while(PLLR == 0)
+    {
+    }
 }
 
 void PMD_Initialize(void)
