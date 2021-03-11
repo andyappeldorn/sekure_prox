@@ -95,8 +95,6 @@
  * Global Functions
  * =======================================================================
  */
-    void MTOUCH_Proximity_SetActivatedCallback   (void (*callback)(enum mtouch_proximity_names prox));
-    void MTOUCH_Proximity_SetNotActivatedCallback(void (*callback)(enum mtouch_proximity_names prox));
     void                        MTOUCH_Proximity_Initialize     (enum mtouch_proximity_names prox);
     void                        MTOUCH_Proximity_InitializeAll  (void);
     void                        MTOUCH_Proximity_ServiceAll     (void);

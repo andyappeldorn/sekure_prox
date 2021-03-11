@@ -15,12 +15,6 @@
 #define LATB_LED_MASK             0x0f
 #define LIGHT_SHOW_STEP_INTERVAL  150
 
-//#define NOTHING_SHOW    0
-//#define KNIGHT_SHOW     1
-//#define ALL_SHOW        2
-//#define TEST_SHOW       3
-//#define HANDS_OFF_SHOW  4
-
 void processProximityActive(enum mtouch_proximity_names proximity);
 void processProximityNotActive(enum mtouch_proximity_names proximity);
 void LedTimerISR(void);

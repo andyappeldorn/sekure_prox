@@ -47,7 +47,7 @@
 //#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
 #define ALL_FLASH_SECONDS   102   // 10 s
 
-
+/* STATE MACHINES */
 typedef enum {
     SENSING, LED_KNIGHT, LED_ALL_FLASH, BAT_CHECK_STATE, RE_ARM
 } e_controlState; // main loop control states
@@ -60,7 +60,7 @@ typedef enum {
 
 e_lightShowState lightShowState = NOTHING_SHOW;
 
-
+/* VARIABLES */
 uint32_t t0tick_seconds_countdown;  // tick counter for seconds elapsed
 uint32_t blocking_delay_timer = 0;  // blocking delay timer????
 uint32_t bs_timer = 0;  // battery status timer
@@ -73,11 +73,12 @@ bool one_minute_flag = false;   // one minute elapsed flag
 void main(void) {
     // initialize the device
     SYSTEM_Initialize();
+    
     TMR0_StopTimer(); // stop timer that is started in sys initialize process
     TMR0_SetInterruptHandler(LedTimerISR);
     
-    MTOUCH_Proximity_SetActivatedCallback(processProximityActive);
-    MTOUCH_Proximity_SetNotActivatedCallback(processProximityNotActive);
+//    MTOUCH_Proximity_SetActivatedCallback(processProximityActive);
+//    MTOUCH_Proximity_SetNotActivatedCallback(processProximityNotActive);
     MTOUCH_Service_disableLowpower();
 
     // Turn off FVR
@@ -105,13 +106,11 @@ void main(void) {
                     if (MTOUCH_Proximity_isActivated(0)) {  // was proximity detected
                         MTOUCH_Service_disableLowpower();   // turn off low power
                         TMR0_StartTimer(); // start timer
-                        enable_switches();  
                         lightShowState = KNIGHT_SHOW;
                         controlState = LED_KNIGHT; // change state to LED walking display
                         t0tick_seconds_countdown = get_switch_dwell_time_setting();
                     } else {
                         controlState = SENSING; // stay in sensing state
-                        disable_switches();
                         all_leds_off(); // turn off LEDs
                         // return to sleep for low power operation
                     }
@@ -153,28 +152,6 @@ void main(void) {
 #endif
                 break;
         }
-    }
-}
-
-/* proximity detection active callback
- */
-void processProximityActive(enum mtouch_proximity_names proximity) {
-    switch (proximity) {
-        case Proximity0:
-            proximity_detect_status = true;
-            break;
-        default: break;
-    }
-}
-
-/* proximity detection not active callback
- */
-void processProximityNotActive(enum mtouch_proximity_names proximity) {
-    switch (proximity) {
-        case Proximity0:
-            proximity_detect_status = false;
-            break;
-        default: break;
     }
 }
 
@@ -466,7 +443,7 @@ uint32_t get_switch_dwell_time_setting(void) {
     // If all four switches read logic 0, we return 0.
 
     // All times are in units of seconds
-
+    enable_switches(); 
 
     if (IO_RC7_GetValue()) {
         ret_val = 1221; // 120 s
@@ -480,6 +457,8 @@ uint32_t get_switch_dwell_time_setting(void) {
         ret_val = 0; // 0 s
     }
 
+    disable_switches();
+    
     return ret_val;
 }
 
@@ -489,17 +468,17 @@ void disable_switches(void) {
 
 void enable_switches(void) {
     IO_RC2_SetHigh();
-    blocking_delay_ms(1);
+    blocking_delay_ms(1);       // why blocking delay?  disabling PIE is not advised
 }
 
 void blocking_delay_ms(uint32_t num_of_ms) {
     // Disable interrupts while ISR variable is changed.
-    INTERRUPT_PeripheralInterruptDisable();
+//    INTERRUPT_PeripheralInterruptDisable();
 
     blocking_delay_timer = num_of_ms;
 
     // Reenable interrupts
-    INTERRUPT_PeripheralInterruptEnable();
+//    INTERRUPT_PeripheralInterruptEnable();
 
     while (blocking_delay_timer);
 }

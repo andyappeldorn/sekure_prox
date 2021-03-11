@@ -241,7 +241,7 @@ bool MTOUCH_Service_Mainloop(void)
                         SLEEP();
                         NOP();
                         NOP();
-                        if (one_minute_countdown_timer)
+                        if (one_minute_countdown_timer)     // @appel - why is this in the mtouch.c file?
                         {
                           one_minute_countdown_timer--;
                         }
