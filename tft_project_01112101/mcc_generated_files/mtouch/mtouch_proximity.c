@@ -44,7 +44,9 @@ enum mtouch_prox_state
 {
     MTOUCH_PROXIMITY_STATE_initializing = 0,
     MTOUCH_PROXIMITY_STATE_notActivated,
-    MTOUCH_PROXIMITY_STATE_activated
+    MTOUCH_PROXIMITY_STATE_activatedDebounce,
+    MTOUCH_PROXIMITY_STATE_activated,
+    MTOUCH_PROXIMITY_STATE_notActivatedDebounce
 };
 
  enum mtouch_proximity_hysteresis_thresholds
@@ -111,6 +113,8 @@ static void                     Proximity_DefaultCallback       (enum mtouch_pro
 static void                     Proximity_State_Initializing    (mtouch_proximity_t* prox);
 static void                     Proximity_State_NotActivated    (mtouch_proximity_t* prox);
 static void                     Proximity_State_Activated       (mtouch_proximity_t* prox);
+static void                     Proximity_State_NotActivatedDebounce    (mtouch_proximity_t* prox);
+static void                     Proximity_State_ActivatedDebounce       (mtouch_proximity_t* prox);
 
 /*
  * =======================================================================
@@ -131,7 +135,9 @@ proximity_statemachine_state_t Proximity_StateMachine[] =
 {
     Proximity_State_Initializing,
     Proximity_State_NotActivated,
-    Proximity_State_Activated
+    Proximity_State_ActivatedDebounce,    
+    Proximity_State_Activated,
+    Proximity_State_NotActivatedDebounce
 };
 #define PROXIMITY_STATEMACHINE_COUNT (uint8_t)(sizeof(Proximity_StateMachine)/sizeof(proximity_statemachine_state_t))
 
@@ -229,9 +235,8 @@ static void Proximity_State_NotActivated(mtouch_proximity_t* prox)
     /* Threshold check */
     else if ((prox->integratedDeviation) > (prox->threshold))
     {
-        prox->state   = MTOUCH_PROXIMITY_STATE_activated;
-        prox->counter = (mtouch_prox_statecounter_t)0; 
-        callback_activated(prox->name);
+        prox->state   = MTOUCH_PROXIMITY_STATE_activatedDebounce;
+        prox->counter = (mtouch_prox_statecounter_t)0;
     }
     else
     {
@@ -261,10 +266,46 @@ static void Proximity_State_Activated(mtouch_proximity_t* prox)
     /* Threshold check */
     else if ((prox->integratedDeviation) < (prox->threshold-((prox->threshold) >> prox->hysteresis)))
     {
+        prox->state   = MTOUCH_PROXIMITY_STATE_notActivatedDebounce;
+        prox->counter = (mtouch_prox_statecounter_t)0;
+    }
+}
+static void Proximity_State_ActivatedDebounce(mtouch_proximity_t* prox)
+{
+    if((prox->integratedDeviation) > (prox->threshold))
+    {
+        (prox->counter)++;
+        if ((prox->counter) >= MTOUCH_PROXIMITY_DEBOUNCE_COUNT)
+        {
+            prox->state   = MTOUCH_PROXIMITY_STATE_activated;
+            prox->counter = (mtouch_prox_statecounter_t)0;
+            callback_activated(prox->name);
+        }
+    }
+    else
+    {
         prox->state   = MTOUCH_PROXIMITY_STATE_notActivated;
         prox->counter = (mtouch_prox_statecounter_t)0;
-        prox->baseline_count = (mtouch_prox_baselinecounter_t)MTOUCH_PROXIMITY_BASECOUNTER_MAX-MTOUCH_PROXIMITY_BASELINE_HOLD;
-        callback_notActivated(prox->name);
+    }
+}
+
+static void Proximity_State_NotActivatedDebounce(mtouch_proximity_t* prox)
+{
+    if ((prox->integratedDeviation) < (prox->threshold -((prox->threshold) >> prox->hysteresis)))
+    {
+        (prox->counter)++;
+        if ((prox->counter) >= MTOUCH_PROXIMITY_DEBOUNCE_COUNT)
+        {
+            prox->state   = MTOUCH_PROXIMITY_STATE_notActivated;
+            prox->counter = (mtouch_prox_statecounter_t)0;
+            prox->baseline_count = (mtouch_prox_baselinecounter_t)MTOUCH_PROXIMITY_BASECOUNTER_MAX-MTOUCH_PROXIMITY_BASELINE_HOLD;
+            callback_notActivated(prox->name);
+        }
+    }
+    else
+    {
+        prox->state   = MTOUCH_PROXIMITY_STATE_activated;
+        prox->counter = (mtouch_prox_statecounter_t)0;
     }
 }
 
@@ -331,7 +372,7 @@ void MTOUCH_Proximity_Scaling_Set(enum mtouch_proximity_names name,mtouch_prox_s
 bool MTOUCH_Proximity_isActivated(enum mtouch_proximity_names name)
 {
     if(name < MTOUCH_PROXIMITY)
-        return (mtouch_proximity[name].state == MTOUCH_PROXIMITY_STATE_activated) ? true : false; 
+        return (mtouch_proximity[name].state == MTOUCH_PROXIMITY_STATE_activated || mtouch_proximity[name].state == MTOUCH_PROXIMITY_STATE_notActivatedDebounce) ? true : false;
     else
         return false;
 }

@@ -41,6 +41,7 @@
 #include "mtouch_config.h"
 #include "mtouch_sensor.h"
 #include "mtouch_proximity.h"
+#include "mtouch_datastreamer.h"
 
 #if (__XC8_VERSION < 1420)
     #error  Please update XC8 compiler to version 1.42 or higher. 
