@@ -77,15 +77,15 @@
      * Proximity Parameters
      * =======================================================================
      */
-    #define MTOUCH_PROXIMITY_READING_GAIN           ((uint8_t)1u)
-    #define MTOUCH_PROXIMITY_BASELINE_GAIN          ((uint8_t)4u)
+    #define MTOUCH_PROXIMITY_READING_GAIN           ((uint8_t)4u)
+    #define MTOUCH_PROXIMITY_BASELINE_GAIN          ((uint8_t)1u)
     #define MTOUCH_PROXIMITY_BASELINE_INIT          ((mtouch_prox_baselinecounter_t)16u)
     #define MTOUCH_PROXIMITY_BASELINE_RATE          ((mtouch_prox_baselinecounter_t)128u)
     #define MTOUCH_PROXIMITY_BASELINE_HOLD          ((mtouch_prox_baselinecounter_t)1024u)
     #define MTOUCH_PROXIMITY_DEVIATION_GAIN         ((uint8_t)4u);
     #define MTOUCH_PROXIMITY_NEGATIVEDEVIATION      ((mtouch_prox_statecounter_t)32u)
     #define MTOUCH_PROXIMITY_ACTIVITYTIMEOUT        ((mtouch_prox_statecounter_t)9999u)
-    #define MTOUCH_PROXIMITY_DEBOUNCE_COUNT         50u
+    #define MTOUCH_PROXIMITY_DEBOUNCE_COUNT         30u
 
     #define MTOUCH_PROXIMITY_THRESHOLD_Proximity0   20u
     
