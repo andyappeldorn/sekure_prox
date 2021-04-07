@@ -85,7 +85,7 @@
     #define MTOUCH_PROXIMITY_DEVIATION_GAIN         ((uint8_t)2u);
     #define MTOUCH_PROXIMITY_NEGATIVEDEVIATION      ((mtouch_prox_statecounter_t)32u)
     #define MTOUCH_PROXIMITY_ACTIVITYTIMEOUT        ((mtouch_prox_statecounter_t)2000u)
-    #define MTOUCH_PROXIMITY_DEBOUNCE_COUNT         2u
+    #define MTOUCH_PROXIMITY_DEBOUNCE_COUNT         10u
 
     #define MTOUCH_PROXIMITY_THRESHOLD_Proximity0   30u
     
@@ -106,7 +106,7 @@
      #define MTOUCH_LOWPOWER_DETECT_THRESHOLD       20u 
      #define MTOUCH_LOWPOWER_SCAN_INTERVAL          64u   //unit ms
      #define MTOUCH_LOWPOWER_INACTIVE_TIMEOUT       2000u   //unit ms   
-     #define MTOUCH_LOWPOWER_BASELINEUPDATE_TIME    2000u   //unit ms  
+     #define MTOUCH_LOWPOWER_BASELINEUPDATE_TIME    5000u   //unit ms  
 
 
 #endif // MTOUCH_CONFIG_H

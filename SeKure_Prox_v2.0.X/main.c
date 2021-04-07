@@ -44,12 +44,12 @@
 #include "mcc_generated_files/mcc.h"
 #include "main.h"
 
-#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
+//#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
 
 #define LED_FLASH_RATE 1   // flash rate in 100ms
 #define LED_FLASH_TIME 100   // in 100ms
 // #define LED_DWELL_TIME 100   // dwell time determined by reading switches
-#define BATTERY_MEASURE_TIME 1000 // in 100ms
+#define BATTERY_MEASURE_TIME 10 // in 100ms
 
 /* STATE MACHINES */
 typedef enum {
@@ -118,6 +118,7 @@ void main_process(void) {
                         // return to sleep for low power operation
                         if (batteryMeasurementCounter > BATTERY_MEASURE_TIME) { // is it time to check battery?
 //                            batteryCheckFlag = true; // schedule battery to be checked
+                            batteryMeasurementCounter = 0;
                             controlState = BAT_CHECK_STATE;
                         }
                     }
