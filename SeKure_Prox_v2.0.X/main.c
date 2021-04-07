@@ -48,7 +48,8 @@
 
 #define LED_FLASH_RATE 1   // flash rate in 100ms
 #define LED_FLASH_TIME 100   // in 100ms
-#define BATTERY_MEASURE_TIME 600 // in 100ms
+// #define LED_DWELL_TIME 100   // dwell time determined by reading switches
+#define BATTERY_MEASURE_TIME 1000 // in 100ms
 
 /* STATE MACHINES */
 typedef enum {
@@ -66,8 +67,13 @@ e_lightShowState lightShowState = NOTHING_SHOW;
 /* TIMERS */
 uint32_t lightingOnTimeCounter;
 uint32_t lightingFlashTimeCounter;
+uint32_t batteryMeasurementCounter;
 uint32_t lightingDwellTime;
-uint32_t batteryMeasurementTimer;
+
+uint8_t batteryCheckFlag = false;
+
+uint32_t bs_timer = 0;
+bool bat_is_low = false;
 
 /* PROTOS */
 void main_process(void);
@@ -90,7 +96,7 @@ void main(void) {
 
     MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
     TMR0_StartTimer(); // start timer
-    
+
     while (1) {
         main_process();
     }
@@ -110,6 +116,10 @@ void main_process(void) {
                         controlState = SENSING_STATE; // stay in sensing state
                         lightShowState = NOTHING_SHOW; // no LEDs to show
                         // return to sleep for low power operation
+                        if (batteryMeasurementCounter > BATTERY_MEASURE_TIME) { // is it time to check battery?
+//                            batteryCheckFlag = true; // schedule battery to be checked
+                            controlState = BAT_CHECK_STATE;
+                        }
                     }
                 }
             }
@@ -118,12 +128,14 @@ void main_process(void) {
             lighting_process();
             break;
         case BAT_CHECK_STATE:
-            //            if (MTOUCH_Sensor_isSampling() == false) {
-            //                MTOUCH_Sensor_Disable(Sensor_ANA4);
-            //                battery_service();
-            //                MTOUCH_Sensor_Enable(Sensor_ANA4);
-            //                MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
-            //            }
+            MTOUCH_Service_disableLowpower(); // turn off low power
+            if (MTOUCH_Sensor_isSampling() == false) {  // verify ADC is not being used for sampling
+                MTOUCH_Sensor_Disable(Sensor_ANA4); // disable proximity sensor
+                battery_service();  // check battery level
+                MTOUCH_Sensor_Enable(Sensor_ANA4);  // enable proximity sensor
+                MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
+            }
+            controlState = RE_ARM_STATE; // done with battery check sequence
             break;
         case RE_ARM_STATE:
             //            TMR0_StopTimer(); // stop timer
@@ -154,7 +166,7 @@ void lighting_process(void) {
             //            TMR0_StartTimer(); // start timer
             knight_rider(); // run knight rider sequence first step
             lightingDwellTime = get_switch_dwell_time_setting();
-            //            lightingDwellTime = 102; // @todo - fix get dwell time, need loop timer for settling of output
+            //            lightingDwellTime = 102; // @todo/DONE - fix get dwell time, need loop timer for settling of output
             lightShowState = KNIGHT_SHOW; // move to knight show sequence
             break;
         case KNIGHT_SHOW:
@@ -204,8 +216,8 @@ void LedTimerISR(void) {
     if (lightingFlashTimeCounter < UINT32_MAX) {
         lightingFlashTimeCounter++;
     }
-    if (batteryMeasurementTimer < UINT32_MAX) {
-        batteryMeasurementTimer++;
+    if (batteryMeasurementCounter < UINT32_MAX) {
+        batteryMeasurementCounter++;
     }
 }
 
@@ -331,141 +343,141 @@ void enable_switches(void) {
 void disable_switches(void) {
     IO_RC2_SetLow();
 }
-//
-//void battery_service(void) {
-//    static uint8_t bs_state = 0;
-//
-//
-//    switch (bs_state) {
-//            // initial state
-//            // Turn on FVR, turn on indicator led if necessary
-//            // Don't measure until state - this gives 100 ms for FVR to stabilize.
-//        case 0:
-//            //            lightShowState = HANDS_OFF_SHOW;
-//
-//            // This is a heartbeat led, independent of bat voltage, per Dave A.
-//            LED_1_SetHigh();
-//
-//            if (bat_is_low) {
-//                // This is the low bat indication.
-//                LED_0_SetHigh();
-//                bs_state = 2;
-//            } else {
-//                FVRCONbits.FVREN = 1;
-//                bs_state = 1;
-//            }
-//            bs_timer = 1;
-//            break;
-//
-//            // measure state
-//            // Turn off indicator led. Assume FVR stable, go measure
-//            // battery voltage.
-//        case 1:
-//            if (!bs_timer) {
-//                look_at_bat_voltage();
-//
-//                // Low bat indication off
-//                LED_0_SetLow();
-//
-//                // Heartbeat led off
-//                LED_1_SetLow();
-//                bs_timer = 1;
-//                bs_state = 2;
-//            }
-//            break;
-//
-//            // FVR off state
-//            // Turn off FVR. Go to exit state to allow
-//            // FVR and ADC to stabilize.
-//        case 2:
-//        default:
-//            if (!bs_timer) {
-//                bs_state = 3;
-//                bs_timer = 1;
-//                FVRCONbits.FVREN = 0;
-//            }
-//            break;
-//
-//            // Exit state
-//            // Reset led handler and touch stuff.
-//            // Set next state to initial, see you in one minute.
-//        case 3:
-//            if (!bs_timer) {
-//                bs_state = 0;
-//                controlState = RE_ARM_STATE;
-//                lightShowState = NOTHING_SHOW;
-//                all_leds_off();
-//            }
-//            break;
-//    }
-//}
-//
-///********************************************************************
-// *   Function Name:  look_at_bat_voltage
-// *
-// *   Parameters:     none
-// *
-// *   Return Value:   none
-// *
-// *   Description:    Measure and smooth battery voltage
-// *
-// ********************************************************************/
-//void look_at_bat_voltage(void) {
-//    uint8_t i;
-//    uint16_t average_bat_voltage = 0;
-//
-//    // NOTE: we're actually measuring Vref (ADC reference voltage) by
-//    //  assuming that Vi (FVR output) is constant. This means that
-//    //  as Vref decreases, the apparent ADC reading increases. Therefore
-//    //  the low battery threshold is a LOWER limit for the ADC
-//    //  measured value.
-//
-//    // Our Vi is FVR channel 1, which is configured to output 1.024 V
-//
-//    // Get rid of ADC touch settings.
-//    ADCC_Initialize();
-//
-//    PIR1bits.ADTIF = 0; // clear interrupt flag
-//    PIE1bits.ADTIE = 0; // disable interrupt
-//
-//    // Take four readings
-//    for (i = 0; i < 4; i++) {
-//        // FVR channel 1
-//        average_bat_voltage += ADCC_GetSingleConversion(0x3e);
-//    }
-//
-//    //
-//    // N -> ADC output reading (12 bit)
-//    // Vref -> ADC reference (Vbat)
-//    //
-//    //  N = (2^12 - 1) * Vi / Vref
-//    //
-//    //  Vi = 1.024 V
-//    //  Vref limit = 2.05 V
-//    //
-//    //  N = 4095 * 1.024 / 2.05
-//    //    = 2045.5
-//    //    ~= 2046
-//    //    = 0x7fe 
-//    //
-//    // Since we took four readings we can roll the *4
-//    // factor into the threshold. This saves us the
-//    // extra step of dividing.
-//    //
-//    //  0x7fe * 4 = 0x1ff8
-//    //
-//
-//    if (average_bat_voltage >= 0x1ff8) {
-//        // Note that this can never be reset except by a POR
-//        bat_is_low = true;
-//    }
-//
-//    // For debugger breakpoint (optimizer cheat)
-//    NOP();
-//    NOP();
-//    NOP();
-//    NOP();
-//
-//    PIR1bits.ADTIF = 0; // clear interrupt flag
-//    PIE1bits.ADTIE = 1; // reenable interrupt
-//}
+
+void battery_service(void) {
+    static uint8_t bs_state = 0;
+
+
+    switch (bs_state) {
+            // initial state
+            // Turn on FVR, turn on indicator led if necessary
+            // Don't measure until state - this gives 100 ms for FVR to stabilize.
+        case 0:
+            //            lightShowState = HANDS_OFF_SHOW;
+
+            // This is a heartbeat led, independent of bat voltage, per Dave A.
+            LED_1_SetHigh();
+
+            if (bat_is_low) {
+                // This is the low bat indication.
+                LED_0_SetHigh();
+                bs_state = 2;
+            } else {
+                FVRCONbits.FVREN = 1;
+                bs_state = 1;
+            }
+            bs_timer = 1;
+            break;
+
+            // measure state
+            // Turn off indicator led. Assume FVR stable, go measure
+            // battery voltage.
+        case 1:
+            if (!bs_timer) {
+                look_at_bat_voltage();
+
+                // Low bat indication off
+                LED_0_SetLow();
+
+                // Heartbeat led off
+                LED_1_SetLow();
+                bs_timer = 1;
+                bs_state = 2;
+            }
+            break;
+
+            // FVR off state
+            // Turn off FVR. Go to exit state to allow
+            // FVR and ADC to stabilize.
+        case 2:
+        default:
+            if (!bs_timer) {
+                bs_state = 3;
+                bs_timer = 1;
+                FVRCONbits.FVREN = 0;
+            }
+            break;
+
+            // Exit state
+            // Reset led handler and touch stuff.
+            // Set next state to initial, see you in one minute.
+        case 3:
+            if (!bs_timer) {
+                bs_state = 0;
+                controlState = RE_ARM_STATE;
+                lightShowState = NOTHING_SHOW;
+                all_leds_off();
+            }
+            break;
+    }
+}
+
+/********************************************************************
+ *   Function Name:  look_at_bat_voltage
+ *
+ *   Parameters:     none
+ *
+ *   Return Value:   none
+ *
+ *   Description:    Measure and smooth battery voltage
+ *
+ ********************************************************************/
+void look_at_bat_voltage(void) {
+    uint8_t i;
+    uint16_t average_bat_voltage = 0;
+
+    // NOTE: we're actually measuring Vref (ADC reference voltage) by
+    //  assuming that Vi (FVR output) is constant. This means that
+    //  as Vref decreases, the apparent ADC reading increases. Therefore
+    //  the low battery threshold is a LOWER limit for the ADC
+    //  measured value.
+
+    // Our Vi is FVR channel 1, which is configured to output 1.024 V
+
+    // Get rid of ADC touch settings.
+    ADCC_Initialize();
+
+    PIR1bits.ADTIF = 0; // clear interrupt flag
+    PIE1bits.ADTIE = 0; // disable interrupt
+
+    // Take four readings
+    for (i = 0; i < 4; i++) {
+        // FVR channel 1
+        average_bat_voltage += ADCC_GetSingleConversion(0x3e);
+    }
+
+    //
+    // N -> ADC output reading (12 bit)
+    // Vref -> ADC reference (Vbat)
+    //
+    //  N = (2^12 - 1) * Vi / Vref
+    //
+    //  Vi = 1.024 V
+    //  Vref limit = 2.05 V
+    //
+    //  N = 4095 * 1.024 / 2.05
+    //    = 2045.5
+    //    ~= 2046
+    //    = 0x7fe 
+    //
+    // Since we took four readings we can roll the *4
+    // factor into the threshold. This saves us the
+    // extra step of dividing.
+    //
+    //  0x7fe * 4 = 0x1ff8
+    //
+
+    if (average_bat_voltage >= 0x1ff8) {
+        // Note that this can never be reset except by a POR
+        bat_is_low = true;
+    }
+
+    // For debugger breakpoint (optimizer cheat)
+    NOP();
+    NOP();
+    NOP();
+    NOP();
+
+    PIR1bits.ADTIF = 0; // clear interrupt flag
+    PIE1bits.ADTIE = 1; // reenable interrupt
+}
