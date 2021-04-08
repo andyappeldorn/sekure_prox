@@ -4896,7 +4896,7 @@
       </entry>
       <entry>
          <key class="com.microchip.mcc.core.tokenManager.RegisterKey" moduleName="TMR0" registerAlias="T0CON1"/>
-         <value>133</value>
+         <value>149</value>
       </entry>
       <entry>
          <key class="com.microchip.mcc.core.tokenManager.SettingKey" moduleName="PMD" registerAlias="PMD3" settingAlias="CMP2MD"/>
@@ -6916,7 +6916,7 @@
       </entry>
       <entry>
          <key class="com.microchip.mcc.core.tokenManager.SettingKey" moduleName="TMR0" registerAlias="T0CON1" settingAlias="T0ASYNC"/>
-         <value>synchronised</value>
+         <value>not_synchronised</value>
       </entry>
       <entry>
          <key class="com.microchip.mcc.core.tokenManager.PropertyTokenKey" moduleName="mTouch" name="sensors%items%0%preChargeTimeEnable"/>
@@ -8226,7 +8226,7 @@
       </entry>
       <entry>
          <file>mcc_generated_files\tmr0.c</file>
-         <hash>834b8f48d9c58b46e4e357cb4ac10adf06024b5309f642571eb24b6cd58a67c2</hash>
+         <hash>c57c7ad20bdacd9486ba1f8081b455d0085603e37cdf913ceb2347636b64b4ae</hash>
       </entry>
       <entry>
          <file>mcc_generated_files\pin_manager.c</file>
