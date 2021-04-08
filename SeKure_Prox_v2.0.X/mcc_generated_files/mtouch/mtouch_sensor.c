@@ -217,7 +217,7 @@ void MTOUCH_Sensor_ADCC_Initialize(void)
 {
     
     // ADCCS  
-    ADCLK = 0x7;
+    ADCLK = 0x3;
     // ADNREF VSS; ADPREF VDD;
     ADREF = 0x00;
     // ADCAP 0; 

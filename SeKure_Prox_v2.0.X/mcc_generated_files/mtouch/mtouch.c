@@ -170,8 +170,6 @@ bool MTOUCH_Service_Mainloop(void)
         MTOUCH_Initialize();
         mtouch_request_init = false;
     }
-    /* In free running mode, the mTouch service will be executed once MTOUCH_Service_Mainloop gets called.*/
-    mtouch_time_toScan = true;
     
     if(mtouch_time_toScan)               
     {

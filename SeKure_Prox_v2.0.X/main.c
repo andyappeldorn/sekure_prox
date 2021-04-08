@@ -19,25 +19,25 @@
  */
 
 /*
-    (c) 2018 Microchip Technology Inc. and its subsidiaries. 
-    
-    Subject to your compliance with these terms, you may use Microchip software and any 
-    derivatives exclusively with Microchip products. It is your responsibility to comply with third party 
-    license terms applicable to your use of third party software (including open source software) that 
+    (c) 2018 Microchip Technology Inc. and its subsidiaries.
+
+    Subject to your compliance with these terms, you may use Microchip software and any
+    derivatives exclusively with Microchip products. It is your responsibility to comply with third party
+    license terms applicable to your use of third party software (including open source software) that
     may accompany Microchip software.
-    
-    THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER 
-    EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY 
-    IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS 
+
+    THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER
+    EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY
+    IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS
     FOR A PARTICULAR PURPOSE.
-    
-    IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, 
-    INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND 
-    WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP 
-    HAS BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO 
-    THE FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL 
-    CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT 
-    OF FEES, IF ANY, THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS 
+
+    IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE,
+    INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND
+    WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP
+    HAS BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO
+    THE FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL
+    CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT
+    OF FEES, IF ANY, THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS
     SOFTWARE.
  */
 
@@ -46,23 +46,31 @@
 
 //#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
 
-#define LED_FLASH_RATE 1   // flash rate in 100ms
-#define LED_FLASH_TIME 100   // in 100ms
-// #define LED_DWELL_TIME 100   // dwell time determined by reading switches
-#define BATTERY_MEASURE_TIME 10 // in 100ms
+/* TIMING DEFINITIONS */
+#define LED_FLASH_RATE 1   // x100ms - flash rate
+#define LED_FLASH_TIME 100   // x100ms - time to flash at end to signal done
+// #define LED_DWELL_TIME 100   // x100ms - dwell time determined by reading switches
+#define BATTERY_MEASURE_TIME 100 // x100ms - time between battery measurements
 
 /* STATE MACHINES */
 typedef enum {
-    SENSING_INIT, SENSING_STATE, LIGHTING_STATE, BAT_CHECK_STATE, RE_ARM_STATE
+    SENSING_INIT, SENSING_STATE, LIGHTING_STATE, BATTERY_MEASURE_STATE, RE_ARM_STATE
 } e_controlState; // main loop control states
 e_controlState controlState = RE_ARM_STATE;
 
 typedef enum {
-    IDLE, NOTHING_SHOW, KNIGHT_SHOW_INIT, KNIGHT_SHOW, ALL_SHOW_INIT, ALL_SHOW
+    LIGHT_NOTHING_SHOW, LIGHT_KNIGHT_SHOW_INIT, LIGHT_KNIGHT_SHOW, LIGHT_ALL_SHOW_INIT, LIGHT_ALL_SHOW, LIGHT_IDLE
 } e_lightShowState;
-e_lightShowState lightShowState = NOTHING_SHOW;
+e_lightShowState lightShowState = LIGHT_NOTHING_SHOW;
+
+typedef enum {
+    BATTERY_START, BATTERY_ENABLE_FVR, BATTERY_FVR_WAIT, BATTERY_MEASURE, BATTERY_DONE, BATTERY_IDLE
+} e_batteryMeasureState; // battery measurement states
+e_batteryMeasureState batteryMeasureState = BATTERY_IDLE;
 
 /* VARIABLES */
+uint32_t bs_timer = 0;
+volatile bool bat_is_low = false;
 
 /* TIMERS */
 uint32_t lightingOnTimeCounter;
@@ -70,10 +78,9 @@ uint32_t lightingFlashTimeCounter;
 uint32_t batteryMeasurementCounter;
 uint32_t lightingDwellTime;
 
-uint8_t batteryCheckFlag = false;
-
-uint32_t bs_timer = 0;
-bool bat_is_low = false;
+/* FLAGS */
+bool batteryCheckFlag = false;
+bool heartbeatLedState = false;
 
 /* PROTOS */
 void main_process(void);
@@ -98,10 +105,11 @@ void main(void) {
     TMR0_StartTimer(); // start timer
 
     while (1) {
-        main_process();
+        main_process(); // call main process state machine
     }
 }
 
+/* Main Process State Machine */
 void main_process(void) {
     switch (controlState) {
         case SENSING_STATE:
@@ -111,85 +119,88 @@ void main_process(void) {
                         MTOUCH_Sensor_Disable(Sensor_ANA4); // disable proximity sensor to avoid LED interference
                         MTOUCH_Service_disableLowpower(); // turn off low power
                         controlState = LIGHTING_STATE; // switch to lighting state
-                        lightShowState = KNIGHT_SHOW_INIT; // display knight show
+                        lightShowState = LIGHT_KNIGHT_SHOW_INIT; // display knight show
                     } else { // proximity event not detected
                         controlState = SENSING_STATE; // stay in sensing state
-                        lightShowState = NOTHING_SHOW; // no LEDs to show
+                        lightShowState = LIGHT_NOTHING_SHOW; // no LEDs to show
                         // return to sleep for low power operation
-                        if (batteryMeasurementCounter > BATTERY_MEASURE_TIME) { // is it time to check battery?
-//                            batteryCheckFlag = true; // schedule battery to be checked
-                            batteryMeasurementCounter = 0;
-                            controlState = BAT_CHECK_STATE;
-                        }
                     }
+                }
+                if (batteryMeasurementCounter > BATTERY_MEASURE_TIME) { // is it time to check battery?
+                    batteryMeasurementCounter = 0;  // reset counter
+                    batteryMeasureState = BATTERY_START;    // set battery process to start
+                    controlState = BATTERY_MEASURE_STATE; // set control state to check battery voltage
                 }
             }
             break;
         case LIGHTING_STATE:
             lighting_process();
+            // @todo if lightProcessState == IDLE then advance control state machine????
             break;
-        case BAT_CHECK_STATE:
-            MTOUCH_Service_disableLowpower(); // turn off low power
-            if (MTOUCH_Sensor_isSampling() == false) {  // verify ADC is not being used for sampling
-                MTOUCH_Sensor_Disable(Sensor_ANA4); // disable proximity sensor
-                battery_service();  // check battery level
-                MTOUCH_Sensor_Enable(Sensor_ANA4);  // enable proximity sensor
-                MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
-            }
-            controlState = RE_ARM_STATE; // done with battery check sequence
+        case BATTERY_MEASURE_STATE:
+            batteryMeasureProcess(); // measure battery level
+            // @todo if batteryMeasureState == IDLE then advance control state machine????
+            
+//            MTOUCH_Service_disableLowpower(); // turn off low power
+//            if (MTOUCH_Sensor_isSampling() == false) { // verify ADC is not being used for sampling
+//                MTOUCH_Sensor_Disable(Sensor_ANA4); // disable proximity sensor
+//
+//                MTOUCH_Sensor_Enable(Sensor_ANA4); // enable proximity sensor
+//                MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
+//            }
+//            controlState = RE_ARM_STATE; // done with battery check sequence
             break;
         case RE_ARM_STATE:
             //            TMR0_StopTimer(); // stop timer
             MTOUCH_Sensor_Enable(Sensor_ANA4); // enable proximity sensor
             MTOUCH_Initialize(); // restart mtouch library to clear out any previous activity
-            controlState = SENSING_STATE; // switch back to proximity sensing
 #ifdef ENABLE_LOWPOWER
             MTOUCH_Service_enableLowpower();
 #endif
+            controlState = SENSING_STATE; // switch back to proximity sensing
             break;
         default:
             controlState = RE_ARM_STATE; // skip through
-
             break;
     }
 }
 
 void lighting_process(void) {
     switch (lightShowState) {
-        case IDLE:
+        case LIGHT_IDLE:
             break;
-        case NOTHING_SHOW:
+        case LIGHT_NOTHING_SHOW:
             all_leds_off();
             break;
-        case KNIGHT_SHOW_INIT:
+        case LIGHT_KNIGHT_SHOW_INIT:
             lightingOnTimeCounter = 0; // init timer for on time
             lightingFlashTimeCounter = 0; // init timer for flash time
             //            TMR0_StartTimer(); // start timer
             knight_rider(); // run knight rider sequence first step
             lightingDwellTime = get_switch_dwell_time_setting();
             //            lightingDwellTime = 102; // @todo/DONE - fix get dwell time, need loop timer for settling of output
-            lightShowState = KNIGHT_SHOW; // move to knight show sequence
+            lightShowState = LIGHT_KNIGHT_SHOW; // move to knight show sequence
             break;
-        case KNIGHT_SHOW:
+        case LIGHT_KNIGHT_SHOW:
             if (lightingFlashTimeCounter > LED_FLASH_RATE) { // flash next light pattern?
                 lightingFlashTimeCounter -= LED_FLASH_RATE; // sub flash rate
                 knight_rider(); // run knight rider sequence step
             }
             if (lightingOnTimeCounter > lightingDwellTime) { // done with this flash pattern?
                 lightingOnTimeCounter = 0; // reset on time counter for next lighting show
-                lightShowState = ALL_SHOW_INIT; // move to all flash state
+                lightShowState = LIGHT_ALL_SHOW_INIT; // move to all flash state
                 controlState = LIGHTING_STATE; // stay in lighting control state
                 all_leds_off(); // turn off leds at end of show
             }
             break;
-        case ALL_SHOW_INIT:
+        case LIGHT_ALL_SHOW_INIT:
             lightingOnTimeCounter = 0; // init timer for on time
             lightingFlashTimeCounter = 0; // init timer for flash time
             //            TMR0_StartTimer(); // start timer
             all_at_50(); // run flashing sequence first step
-            lightShowState = ALL_SHOW; // move to all show sequence
+            lightShowState = LIGHT_ALL_SHOW; // move to all show sequence
             break;
-        case ALL_SHOW:
+        case LIGHT_ALL_SHOW:
             if (lightingFlashTimeCounter > LED_FLASH_RATE) { // flash next light pattern?
                 lightingFlashTimeCounter -= LED_FLASH_RATE; // sub flash rate
                 all_at_50(); // run flashing sequence step
@@ -197,14 +208,14 @@ void lighting_process(void) {
             if (lightingOnTimeCounter > LED_FLASH_TIME) { // done with this flash pattern?
                 lightingOnTimeCounter = 0; // reset on time counter for next lighting show
                 all_leds_off(); // turn off leds at end of show
-                lightShowState = NOTHING_SHOW; // move to all flash state
+                lightShowState = LIGHT_NOTHING_SHOW; // move to all flash state
                 controlState = RE_ARM_STATE; // done with lighting sequence
             }
             break;
         default:
             all_leds_off();
             controlState = RE_ARM_STATE;
-            lightShowState = NOTHING_SHOW;
+            lightShowState = LIGHT_NOTHING_SHOW;
             break;
     }
 }
@@ -335,7 +346,7 @@ uint32_t get_switch_dwell_time_setting(void) {
 void enable_switches(void) {
     IO_RC2_SetHigh();
     uint16_t counter;
-    for (counter = 0; counter < 0xFF; counter++) {
+    for (counter = 0; counter < 0xFF; counter++) { // loop delay to allow voltage rise
         NOP();
     }
     //    blocking_delay_ms(1); // why blocking delay?  disabling PIE is not advised
@@ -345,73 +356,121 @@ void disable_switches(void) {
     IO_RC2_SetLow();
 }
 
-void battery_service(void) {
-    static uint8_t bs_state = 0;
-
-
-    switch (bs_state) {
-            // initial state
-            // Turn on FVR, turn on indicator led if necessary
-            // Don't measure until state - this gives 100 ms for FVR to stabilize.
-        case 0:
-            //            lightShowState = HANDS_OFF_SHOW;
-
-            // This is a heartbeat led, independent of bat voltage, per Dave A.
-            LED_1_SetHigh();
-
-            if (bat_is_low) {
-                // This is the low bat indication.
-                LED_0_SetHigh();
-                bs_state = 2;
-            } else {
-                FVRCONbits.FVREN = 1;
-                bs_state = 1;
+/* battery measurement process */
+void batteryMeasureProcess(void) {
+    switch (batteryMeasureState) {
+        case BATTERY_START:
+            MTOUCH_Service_disableLowpower(); // turn off low power
+            if (MTOUCH_Sensor_isSampling() == false) { // verify ADC is not being used for sampling
+                MTOUCH_Sensor_Disable(Sensor_ANA4); // disable proximity sensor
             }
-            bs_timer = 1;
+            batteryMeasureState = BATTERY_ENABLE_FVR;
             break;
-
-            // measure state
-            // Turn off indicator led. Assume FVR stable, go measure
-            // battery voltage.
-        case 1:
-            if (!bs_timer) {
-                look_at_bat_voltage();
-
-                // Low bat indication off
-                LED_0_SetLow();
-
-                // Heartbeat led off
-                LED_1_SetLow();
-                bs_timer = 1;
-                bs_state = 2;
+        case BATTERY_ENABLE_FVR:
+            FVRCONbits.FVREN = 1; // enable FVR
+            batteryMeasureState = BATTERY_FVR_WAIT;
+            break;
+        case BATTERY_FVR_WAIT:
+// data sheet says FVRRDY ready always = 1?
+            if (FVRCONbits.FVRRDY == 1) { // wait for FVR to stabilize
+                batteryMeasureState = BATTERY_MEASURE;
             }
+//            batteryMeasureState = BATTERY_MEASURE;
             break;
-
-            // FVR off state
-            // Turn off FVR. Go to exit state to allow
-            // FVR and ADC to stabilize.
-        case 2:
+        case BATTERY_MEASURE:
+            measureBatteryVoltage(); // measure battery voltage  @todo - use return value???
+            FVRCONbits.FVREN = 0; // disable FVR when done
+            batteryMeasureState = BATTERY_DONE;
+            if (bat_is_low == true){
+                LED_0_SetHigh();    // turn on battery low indicator led
+            }
+            else{
+                LED_0_SetLow(); // turn off battery low indicator led
+            } 
+            break;
+        case BATTERY_DONE:
+            controlState = RE_ARM_STATE;    // re-init machine to continue operation
+            batteryMeasureState = BATTERY_IDLE;
+            break;
+        case BATTERY_IDLE:
+            break;
         default:
-            if (!bs_timer) {
-                bs_state = 3;
-                bs_timer = 1;
-                FVRCONbits.FVREN = 0;
-            }
-            break;
-
-            // Exit state
-            // Reset led handler and touch stuff.
-            // Set next state to initial, see you in one minute.
-        case 3:
-            if (!bs_timer) {
-                bs_state = 0;
-                controlState = RE_ARM_STATE;
-                lightShowState = NOTHING_SHOW;
-                all_leds_off();
-            }
+            batteryMeasureState = BATTERY_IDLE;
             break;
     }
 }
+
+/* Heartbeat Control */
+void heartBeatLED(void) {
+
+}
+//void battery_service(void) {
+//    static uint8_t bs_state = 0;
+//
+//
+//    switch (bs_state) {
+//            // initial state
+//            // Turn on FVR, turn on indicator led if necessary
+//            // Don't measure until state - this gives 100 ms for FVR to stabilize.
+//        case 0:
+//            //            lightShowState = HANDS_OFF_SHOW;
+//
+//            // This is a heartbeat led, independent of bat voltage, per Dave A.
+//            LED_1_SetHigh();
+//
+//            if (bat_is_low) {
+//                // This is the low bat indication.
+//                LED_0_SetHigh();
+//                bs_state = 2;
+//            } else {
+//                FVRCONbits.FVREN = 1;
+//                bs_state = 1;
+//            }
+//            bs_timer = 1;
+//            break;
+//
+//            // measure state
+//            // Turn off indicator led. Assume FVR stable, go measure
+//            // battery voltage.
+//        case 1:
+//            if (!bs_timer) {
+//                look_at_bat_voltage();
+//
+//                // Low bat indication off
+//                LED_0_SetLow();
+//
+//                // Heartbeat led off
+//                LED_1_SetLow();
+//                bs_timer = 1;
+//                bs_state = 2;
+//            }
+//            break;
+//
+//            // FVR off state
+//            // Turn off FVR. Go to exit state to allow
+//            // FVR and ADC to stabilize.
+//        case 2:
+//        default:
+//            if (!bs_timer) {
+//                bs_state = 3;
+//                bs_timer = 1;
+//                FVRCONbits.FVREN = 0;
+//            }
+//            break;
+//
+//            // Exit state
+//            // Reset led handler and touch stuff.
+//            // Set next state to initial, see you in one minute.
+//        case 3:
+//            if (!bs_timer) {
+//                bs_state = 0;
+//                controlState = RE_ARM_STATE;
+//                lightShowState = NOTHING_SHOW;
+//                all_leds_off();
+//            }
+//            break;
+//    }
+//}
 
 /********************************************************************
  *   Function Name:  look_at_bat_voltage
@@ -423,7 +482,9 @@ void battery_service(void) {
  *   Description:    Measure and smooth battery voltage
  *
  ********************************************************************/
-void look_at_bat_voltage(void) {
+//void look_at_bat_voltage(void) {
+
+void measureBatteryVoltage(void) {
     uint8_t i;
     uint16_t average_bat_voltage = 0;
 
@@ -438,9 +499,9 @@ void look_at_bat_voltage(void) {
     // Get rid of ADC touch settings.
     ADCC_Initialize();
 
-    PIR1bits.ADTIF = 0; // clear interrupt flag
     PIE1bits.ADTIE = 0; // disable interrupt
-
+    PIR1bits.ADTIF = 0; // clear interrupt flag used in mtouch library
+    
     // Take four readings
     for (i = 0; i < 4; i++) {
         // FVR channel 1
@@ -459,7 +520,7 @@ void look_at_bat_voltage(void) {
     //  N = 4095 * 1.024 / 2.05
     //    = 2045.5
     //    ~= 2046
-    //    = 0x7fe 
+    //    = 0x7fe
     //
     // Since we took four readings we can roll the *4
     // factor into the threshold. This saves us the
@@ -468,17 +529,17 @@ void look_at_bat_voltage(void) {
     //  0x7fe * 4 = 0x1ff8
     //
 
+    PIR1bits.ADTIF = 0; // clear interrupt flag
+    PIE1bits.ADTIE = 1; // re-enable interrupt used in mtouch library
+    
     if (average_bat_voltage >= 0x1ff8) {
         // Note that this can never be reset except by a POR
         bat_is_low = true;
     }
-
-    // For debugger breakpoint (optimizer cheat)
+    
+        // For debugger breakpoint (optimizer cheat)
     NOP();
     NOP();
     NOP();
     NOP();
-
-    PIR1bits.ADTIF = 0; // clear interrupt flag
-    PIE1bits.ADTIE = 1; // reenable interrupt
 }

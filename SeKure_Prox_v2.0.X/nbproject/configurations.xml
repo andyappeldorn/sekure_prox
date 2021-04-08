@@ -9,9 +9,9 @@
                      projectFiles="true">
         <logicalFolder name="mtouch" displayName="mtouch" projectFiles="true">
           <itemPath>mcc_generated_files/mtouch/mtouch_sensor.h</itemPath>
-          <itemPath>mcc_generated_files/mtouch/mtouch_config.h</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch_proximity.h</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch.h</itemPath>
+          <itemPath>mcc_generated_files/mtouch/mtouch_config.h</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch_datastreamer.h</itemPath>
         </logicalFolder>
         <itemPath>mcc_generated_files/adcc.h</itemPath>
@@ -37,14 +37,14 @@
                      displayName="MCC Generated Files"
                      projectFiles="true">
         <logicalFolder name="mtouch" displayName="mtouch" projectFiles="true">
-          <itemPath>mcc_generated_files/mtouch/mtouch.c</itemPath>
-          <itemPath>mcc_generated_files/mtouch/mtouch_sensor.c</itemPath>
           <itemPath>mcc_generated_files/mtouch/mtouch_proximity.c</itemPath>
-          <itemPath>mcc_generated_files/mtouch/mtouch_api_example.c</itemPath>
-          <itemPath>mcc_generated_files/mtouch/mtouch_datastreamer.c</itemPath>
-          <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.db</itemPath>
-          <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.sc</itemPath>
           <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.ds</itemPath>
+          <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.sc</itemPath>
+          <itemPath>mcc_generated_files/mtouch/mtouch_sensor.c</itemPath>
+          <itemPath>mcc_generated_files/mtouch/mtouch_api_example.c</itemPath>
+          <itemPath>mcc_generated_files/mtouch/mtouch.c</itemPath>
+          <itemPath>mcc_generated_files/mtouch/03EB00000000000000AA5501.db</itemPath>
+          <itemPath>mcc_generated_files/mtouch/mtouch_datastreamer.c</itemPath>
         </logicalFolder>
         <itemPath>mcc_generated_files/interrupt_manager.c</itemPath>
         <itemPath>mcc_generated_files/pin_manager.c</itemPath>
