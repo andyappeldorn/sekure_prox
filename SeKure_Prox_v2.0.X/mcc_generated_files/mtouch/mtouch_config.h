@@ -49,7 +49,7 @@
  */
     #define MTOUCH_SENSORS          1u
     #define MTOUCH_PROXIMITY        1u
-    #define MTOUCH_DEBUG_COMM_ENABLE      1u
+//    #define MTOUCH_DEBUG_COMM_ENABLE      1u
 
     /* 
      * =======================================================================

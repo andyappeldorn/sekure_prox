@@ -8,29 +8,31 @@
 
 #include <xc.h>
 
-#define ALL_FLASH_SECONDS   102   // 10 s
+#define ENABLE_LOWPOWER   // enable low power operation, serial debug will not operate properly
+#define PRODUCTION_TIMING   // comment this to use quick flash sequences for faster testing
+
+#ifdef PRODUCTION_TIMING
+/* PRODUCTION TIMING DEFINITIONS */
+#define LED_FLASH_RATE 10   // x10ms - flash rate
+#define LED_FLASH_TIME 1000   // x10ms - time to flash at end to signal done
+// #define LED_DWELL_TIME 1000   // x10ms - dwell time determined by reading switches - don't use
+#else
+/* QUICK TEST TIMING DEFINITIONS */
+#define LED_FLASH_RATE 1   // x10ms - flash rate
+#define LED_FLASH_TIME 20   // x10ms - time to flash at end to signal done
+#define LED_DWELL_TIME 30   // x10ms - dwell time determined by reading switches
+#endif
 
 #define TRUE                      1
 #define FALSE                     0
-#define NUM_OF_LEDS               4
-#define NUM_OF_KNIGHT_SEQ_STEPS   6
-#define LATB_LED_MASK             0x0f
-#define LIGHT_SHOW_STEP_INTERVAL  150
 
-//void processProximityActive(enum mtouch_proximity_names proximity);
-//void processProximityNotActive(enum mtouch_proximity_names proximity);
-void LedTimerISR(void);
-void light_handler(void);
-void knight_rider(void);
-void all_at_50(void);
-void all_leds_off(void);
-uint32_t get_switch_dwell_time_setting(void);
-void disable_switches(void);
-void enable_switches(void);
-//void blocking_delay_ms(uint32_t);
-//void battery_service(void);
-void batteryMeasureProcess(void);
-//void look_at_bat_voltage(void);
-void measureBatteryVoltage(void);
+/* STATE MACHINE DEFINITIONS */
+typedef enum {
+    SENSING_INIT, SENSING_STATE, LIGHTING_STATE, RE_ARM_STATE
+} e_controlState; // main loop control states
+extern e_controlState controlState;
+
+/* FUNCTION PROTOTYPES */
+void main_process(void);
 
 #endif // _MAIN_H

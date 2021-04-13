@@ -51,6 +51,11 @@
 #include <xc.h>
 #include "tmr0.h"
 
+/**
+  Section: Global Variables Definitions
+*/
+
+volatile uint16_t timer0ReloadVal16bit;
 
 /**
   Section: TMR0 APIs
@@ -65,11 +70,14 @@ void TMR0_Initialize(void)
     // T0CS LFINTOSC; T0CKPS 1:32; T0ASYNC not_synchronised; 
     T0CON1 = 0x95;
 
-    // TMR0H 96; 
-    TMR0H = 0x60;
+    // TMR0H 28; 
+    TMR0H = 0x1C;
 
-    // TMR0L 0; 
-    TMR0L = 0x00;
+    // TMR0L 243; 
+    TMR0L = 0xF3;
+
+    // Load TMR0 value to the 16-bit reload variable
+    timer0ReloadVal16bit = (TMR0H << 8) | TMR0L;
 
     // Clear Interrupt flag before enabling the interrupt
     PIR0bits.TMR0IF = 0;
@@ -80,8 +88,8 @@ void TMR0_Initialize(void)
     // Set Default Interrupt Handler
     TMR0_SetInterruptHandler(TMR0_DefaultInterruptHandler);
 
-    // T0OUTPS 1:1; T0EN enabled; T016BIT 8-bit; 
-    T0CON0 = 0x80;
+    // T0OUTPS 1:1; T0EN enabled; T016BIT 16-bit; 
+    T0CON0 = 0x90;
 }
 
 void TMR0_StartTimer(void)
@@ -96,32 +104,41 @@ void TMR0_StopTimer(void)
     T0CON0bits.T0EN = 0;
 }
 
-uint8_t TMR0_ReadTimer(void)
+uint16_t TMR0_ReadTimer(void)
 {
-    uint8_t readVal;
+    uint16_t readVal;
+    uint8_t readValLow;
+    uint8_t readValHigh;
 
-    // read Timer0, low register only
-    readVal = TMR0L;
+    readValLow  = TMR0L;
+    readValHigh = TMR0H;
+    readVal  = ((uint16_t)readValHigh << 8) + readValLow;
 
     return readVal;
 }
 
-void TMR0_WriteTimer(uint8_t timerVal)
+void TMR0_WriteTimer(uint16_t timerVal)
 {
-    // Write to Timer0 registers, low register only
-    TMR0L = timerVal;
- }
+    // Write to the Timer0 register
+    TMR0H = timerVal >> 8;
+    TMR0L = (uint8_t) timerVal;
+}
 
-void TMR0_Reload(uint8_t periodVal)
+void TMR0_Reload(void)
 {
-   // Write to Timer0 registers, high register only
-   TMR0H = periodVal;
+    // Write to the Timer0 register
+    TMR0H = timer0ReloadVal16bit >> 8;
+    TMR0L = (uint8_t) timer0ReloadVal16bit;
 }
 
 void TMR0_ISR(void)
 {
     // clear the TMR0 interrupt flag
     PIR0bits.TMR0IF = 0;
+    // Write to the Timer0 register
+    TMR0H = timer0ReloadVal16bit >> 8;
+    TMR0L = (uint8_t) timer0ReloadVal16bit;
+
     // ticker function call;
     // ticker is 1 -> Callback function gets called every time this ISR executes
     TMR0_CallBack();
