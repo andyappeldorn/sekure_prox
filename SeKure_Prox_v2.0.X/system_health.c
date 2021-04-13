@@ -166,6 +166,9 @@ void measureBatteryVoltage(void) {
         // Note that this can never be reset except by a POR
         battery_is_low_flag = true;
     }
+    else {
+        battery_is_low_flag = false;
+    }
 
     // For debugger breakpoint (optimizer cheat)
     NOP();
