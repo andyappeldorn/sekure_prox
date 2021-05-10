@@ -97,6 +97,7 @@ void lightingProcess(void) {
             all_leds_off();
             controlState = RE_ARM_STATE;
             lightShowState = LIGHT_NOTHING_SHOW;
+            // systemHealthTimerExpired = TRUE; // need a way to persist the low battery voltage LED
             break;
     }
 }

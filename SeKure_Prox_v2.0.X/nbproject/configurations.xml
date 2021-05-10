@@ -88,7 +88,7 @@
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="PIC16F1xxxx_DFP" vendor="Microchip" version="1.5.133"/>
+        <pack name="PIC16F1xxxx_DFP" vendor="Microchip" version="1.7.146"/>
       </packs>
       <ScriptingSettings>
       </ScriptingSettings>
@@ -228,7 +228,7 @@
         <property key="memories.programmemory.ranges" value="0-fff"/>
         <property key="poweroptions.powerenable" value="false"/>
         <property key="programmerToGoFilePath"
-                  value="C:/microchip/documents/Customer/SeKure/TFT/test/18444_Prox.X/debug/default/18444_Prox_ptg"/>
+                  value="C:/microchip/documents/Customer/SeKure/TFT/SeKure_Prox_v2.0.X/debug/default/SeKure_Prox_v2.0_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
         <property key="programoptions.ledbrightness" value="5"/>

@@ -104,7 +104,6 @@ enum mtouch_prox_state
 static void                     Proximity_Service               (enum mtouch_proximity_names name);
 static void                     Proximity_Deviation_Update      (enum mtouch_proximity_names prox);
 static void                     Proximity_Reading_Update        (mtouch_proximity_t* prox);
-static void                     Proximity_Reading_Update_Helper (mtouch_proximity_t* prox);
 static void                     Proximity_Baseline_Initialize   (mtouch_proximity_t* prox);
 static void                     Proximity_Baseline_Update       (mtouch_proximity_t* prox);
 static mtouch_prox_reading_t    Proximity_Baseline_Get_helper   (enum mtouch_proximity_names prox);
@@ -114,8 +113,18 @@ static void                     Proximity_State_NotActivated    (mtouch_proximit
 static void                     Proximity_State_Activated       (mtouch_proximity_t* prox);
 static void                     Proximity_State_NotActivatedDebounce    (mtouch_proximity_t* prox);
 static void                     Proximity_State_ActivatedDebounce       (mtouch_proximity_t* prox);
+static mtouch_prox_reading_t median_filter(enum mtouch_proximity_names prox,mtouch_prox_reading_t new_data);
 
 
+/*
+ * =======================================================================
+ *  Meidan Filter
+ * =======================================================================
+ */
+#define MTOUCH_MEDIAN_FILTER_TAP        9
+ 
+static uint8_t                  tap_index[MTOUCH_PROXIMITY][MTOUCH_MEDIAN_FILTER_TAP];
+static mtouch_prox_reading_t    filter_data[MTOUCH_PROXIMITY][MTOUCH_MEDIAN_FILTER_TAP];
 
 /*
  * =======================================================================
@@ -147,6 +156,12 @@ void MTOUCH_Proximity_Initialize(enum mtouch_proximity_names name)
     prox->counter         = (mtouch_prox_statecounter_t)0;
     prox->baseline_count  = (mtouch_prox_baselinecounter_t)0;
     prox->integratedDeviation = (mtouch_prox_deviation_t)0;
+    /*Initialize Median filter*/
+    for (uint8_t i=0;i < MTOUCH_MEDIAN_FILTER_TAP;i++)
+    {
+        tap_index[name][i]=i;
+        filter_data[name][i] = 0;
+    }
 }
 
 void MTOUCH_Proximity_Recalibrate(void)
@@ -435,27 +450,27 @@ mtouch_prox_reading_t MTOUCH_Proximity_Reading_Get(enum mtouch_proximity_names n
 
 static void Proximity_Reading_Update(mtouch_proximity_t* prox)
 {
+
+    static mtouch_prox_reading_t reading[MTOUCH_PROXIMITY] = {0};
+    if(prox->state == MTOUCH_PROXIMITY_STATE_initializing)
+    {
+        reading[prox->name] = MTOUCH_Sensor_RawSample_Get(prox->sensor) << MTOUCH_PROXIMITY_READING_GAIN;
+    }
+    else
+    {
+        reading[prox->name] -= reading[prox->name] >> MTOUCH_PROXIMITY_READING_GAIN;
+        reading[prox->name] += MTOUCH_Sensor_RawSample_Get(prox->sensor);
+    }
+    
     if (GIE == (uint8_t)1)
     {
         GIE = (uint8_t)0;
-        Proximity_Reading_Update_Helper(prox);
+        prox->reading = median_filter(prox->name,reading[prox->name]);
         GIE = (uint8_t)1;
     }
     else
     {
-        Proximity_Reading_Update_Helper(prox);
-    }
-}
-static void Proximity_Reading_Update_Helper (mtouch_proximity_t* prox)
-{
-    if(prox->state != MTOUCH_PROXIMITY_STATE_initializing)
-    {
-        prox->reading -= prox->reading>>MTOUCH_PROXIMITY_READING_GAIN;
-        prox->reading += MTOUCH_Sensor_RawSample_Get(prox->sensor);
-    }
-    else
-    {
-        prox->reading = MTOUCH_Sensor_RawSample_Get(prox->sensor) << MTOUCH_PROXIMITY_READING_GAIN;
+        prox->reading = median_filter(prox->name,reading[prox->name]);
     }
 }
 
@@ -507,6 +522,46 @@ void MTOUCH_Proximity_Baseline_ForceUpdate(void)
 
 }
 
+static mtouch_prox_reading_t median_filter(enum mtouch_proximity_names prox,mtouch_prox_reading_t new_data)
+{
+    uint8_t i = (uint8_t)0;
+    static uint8_t deleted;
+    mtouch_prox_reading_t temp_data;
+    uint8_t new_index,temp_index;
+
+    new_index=deleted;
+    while (tap_index[prox][i]!=deleted)
+    {
+        if (filter_data[prox][i]>new_data)
+        {
+            temp_data=filter_data[prox][i];
+            temp_index=tap_index[prox][i];
+            filter_data[prox][i]=new_data;
+            tap_index[prox][i]=new_index;
+            new_data=temp_data;
+            new_index=temp_index;
+        }
+        i++;
+    }
+    filter_data[prox][i]=new_data;
+    tap_index[prox][i]=new_index;
+    for (;i < MTOUCH_MEDIAN_FILTER_TAP-1;i++)
+    {
+        if(new_data>filter_data[prox][i+1])
+        {
+            filter_data[prox][i]=filter_data[prox][i+1];
+            tap_index[prox][i]=tap_index[prox][i+1];
+            filter_data[prox][i+1]=new_data;
+            tap_index[prox][i+1]=new_index;
+        }
+        else
+            break;
+    }
+    if (++deleted>=MTOUCH_MEDIAN_FILTER_TAP)
+        deleted = (uint8_t)0;
+
+    return filter_data[prox][MTOUCH_MEDIAN_FILTER_TAP/2];
+}
 uint8_t MTOUCH_Proximity_State_Get(enum mtouch_proximity_names name)
 {
     if(name < MTOUCH_PROXIMITY)

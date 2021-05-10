@@ -88,6 +88,7 @@ void main_process(void) {
         case SENSING_STATE:
             if (MTOUCH_Service_Mainloop()) { // service mtouch library, acquire sensor data and test
                 if (MTOUCH_Sensor_isSampling() == false) {
+#if (MTOUCH_DEBUG_COMM_ENABLE == 0u)   // dont run any other processes when viewing touch debug data                    
                     if (MTOUCH_Proximity_isActivated(0)) { // proximity event was detected
                         MTOUCH_Sensor_Disable(Sensor_ANA4); // disable proximity sensor to avoid LED interference
                         MTOUCH_Service_disableLowpower(); // turn off low power
@@ -104,6 +105,7 @@ void main_process(void) {
                         MTOUCH_Sensor_Disable(Sensor_ANA4); // disable proximity sensor to avoid LED interference
                         heartbeatAndBatteryCheckProcess();  // heartbeat and battery status check process
                     }
+#endif
                 }
             }
             break;
