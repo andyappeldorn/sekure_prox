@@ -87,7 +87,7 @@
     #define MTOUCH_PROXIMITY_ACTIVITYTIMEOUT        ((mtouch_prox_statecounter_t)100u)
     #define MTOUCH_PROXIMITY_DEBOUNCE_COUNT         4u
 
-    #define MTOUCH_PROXIMITY_THRESHOLD_Proximity0   25u
+    #define MTOUCH_PROXIMITY_THRESHOLD_Proximity0   30u
     
     #define MTOUCH_PROXIMITY_SCALING_Proximity0     0u
     
